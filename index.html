@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LiveStream Wall</title>
+  <!-- hls.js handles HLS playback in browsers that lack native support -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    /* Global reset for margin / padding and to make sure flex items calculate correctly */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Fill the viewport and hide scrollbars */
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    /* Flex-grid that will hold all video tiles */
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Base styles for every video tile */
+    .hls-video {
+      object-fit: cover;       /* Crop video to fill tile */
+      border: none;
+      cursor: pointer;         /* Indicate click-to-fullscreen */
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main video grid -->
+  <div class="container" id="video-container"></div>
+
+  <script>
+    const VIDEO_COUNT = 16;                                     // Number of video players to render
+    const container   = document.getElementById('video-container');
+
+    /**
+     * Attach hls.js to a <video> element, or fall back to native HLS support (Safari).
+     * @param {HTMLVideoElement} video  Target <video> element
+     * @param {string}           source URL of the .m3u8 stream
+     */
+    const initializeVideo = (video, source) => {
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(source);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});                        // Autoplay after manifest is ready
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = source;                                    // Safari / iOS
+        video.addEventListener('loadedmetadata', () => {
+          video.play().catch(() => {});
+        });
+      }
+    };
+
+    /**
+     * Render a fixed grid of VIDEO_COUNT players and start each stream.
+     * Streams repeat cyclically if fewer than VIDEO_COUNT links are supplied.
+     * @param {string[]} links Array of .m3u8 URLs
+     */
+    const renderVideos = (links) => {
+      const sources = links.slice(0, VIDEO_COUNT);
+      while (sources.length < VIDEO_COUNT) {
+        sources.push(...links.slice(0, VIDEO_COUNT - sources.length)); // Repeat to fill grid
+      }
+
+      /* Simple square-root grid: ceil(√n) columns */
+      const columns      = Math.ceil(Math.sqrt(VIDEO_COUNT));
+      const rowHeight    = 100 / Math.ceil(VIDEO_COUNT / columns);
+      const columnWidth  = 100 / columns;
+
+      sources.forEach(src => {
+        const video = document.createElement('video');
+        video.className   = 'hls-video';
+        video.controls    = true;
+        video.autoplay    = true;
+        video.muted       = true;                              // Start muted for autoplay policy
+        video.style.width  = `${columnWidth}%`;
+        video.style.height = `${rowHeight}%`;
+
+        /**
+         * Custom click handler:
+         * ▶  Enter fullscreen + unmute
+         * ◀  Exit fullscreen + mute
+         * No pause / play toggling.
+         */
+        video.addEventListener('click', async (event) => {
+          event.preventDefault();   // Prevent default play/pause toggle
+          event.stopPropagation();
+
+          try {
+            const isFullscreen =
+              document.fullscreenElement === video ||
+              document.webkitFullscreenElement === video ||
+              document.mozFullScreenElement === video ||
+              document.msFullscreenElement === video;
+
+            if (!isFullscreen) {
+              video.muted = false;                           // Turn sound on
+              if (video.requestFullscreen)           await video.requestFullscreen();
+              else if (video.webkitRequestFullscreen) await video.webkitRequestFullscreen();
+              else if (video.mozRequestFullScreen)    await video.mozRequestFullScreen();
+              else if (video.msRequestFullscreen)     await video.msRequestFullscreen();
+            } else {
+              video.muted = true;                            // Turn sound off
+              if (document.exitFullscreen)           await document.exitFullscreen();
+              else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+              else if (document.mozCancelFullScreen)  await document.mozCancelFullScreen();
+              else if (document.msExitFullscreen)     await document.msExitFullscreen();
+            }
+          } catch (e) {
+            console.error('Fullscreen toggle failed', e);
+          }
+        });
+
+        container.appendChild(video);
+        initializeVideo(video, src);
+      });
+    };
+
+    /* Fetch list of stream URLs from connected.txt, then render the grid */
+    fetch('connected.txt')
+      .then(r => r.text())
+      .then(text => {
+        const links = text.split('\n').map(l => l.trim()).filter(Boolean);
+        renderVideos(links);
+      })
+      .catch(err => {
+        alert('Failed to load connected.txt: ' + err.message);
+      });
+  </script>
+</body>
+</html>
