@@ -12,14 +12,13 @@
 
 <p align="center">
   <!-- GitHub badges -->
-  <a href="https://github.com/israice/live-stream-wall/stargazers">
-    <img alt="GitHub stars" src="https://img.shields.io/github/stars/israice/live-stream-wall?style=for-the-badge&logo=github" />
+  <a href="https://github.com/israice/LiveStream-Wall/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/israice/LiveStream-Wall?style=for-the-badge&logo=github" />
   </a>
-  <a href="https://github.com/israice/live-stream-wall/forks">
-    <img alt="GitHub forks" src="https://img.shields.io/github/forks/israice/live-stream-wall?style=for-the-badge&logo=github" />
+  <a href="https://github.com/israice/LiveStream-Wall/forks">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/israice/LiveStream-Wall?style=for-the-badge&logo=github" />
   </a>
-  <img alt="Visitors" src="https://shields.io/endpoint?url=https://visitor-badge-laurel.vercel.app/api/israice/live-stream-wall&style=for-the-badge" />
-  <img alt="Last commit" src="https://img.shields.io/github/last-commit/israice/live-stream-wall?style=for-the-badge" />
+  <img alt="Last commit" src="https://img.shields.io/github/last-commit/israice/LiveStream-Wall?style=for-the-badge" />
 </p>
 
 <br/>
@@ -27,7 +26,7 @@
 ## 🚀 Live Demo
 
 > **Try it instantly:**  
-> https://israice.github.io/live-stream-wall/
+> https://israice.github.io/LiveStream-Wall/
 
 <br/>
 
@@ -71,8 +70,13 @@ Fork → branch → commit feat/fix
 - added screenshot.png to README.md
 - v0.0.1 all tested and works
 
+### v0.0.1
+
+- name of the repo updated in README.md
+
 ### FUTURE PLANS
 
+- create and connect github pages for deployment 
 - add scrolling to move all screen left and right
 - create script to get all m3u8 from the source at once
 
@@ -98,7 +102,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "v0.0.1 all tested and works"  
+git commit -m "name of the repo updated in README.md"  
 git push
 
 </details>
