@@ -33,7 +33,7 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="screenshot.png" alt="LiveStream Wall screenshot">
+  <img src="https://i.postimg.cc/nr8PwWmk/screenshot.png" alt="LiveStream Wall screenshot">
 </p>
 
 <br/>
@@ -73,6 +73,7 @@ Fork → branch → commit feat/fix
 ### v0.0.1
 
 - name of the repo updated in README.md
+- screenshot uploaded to free hosting
 
 ### FUTURE PLANS
 
@@ -102,7 +103,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "name of the repo updated in README.md"  
+git commit -m "screenshot uploaded to free hosting"  
 git push
 
 </details>
