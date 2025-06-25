@@ -76,6 +76,9 @@ Fork → branch → commit feat/fix
 - screenshot uploaded to free hosting
 - 2 dead links replaced
 
+### v0.0.3
+- added promo for 5 second when minimizing thw player
+
 ### FUTURE PLANS
 
 - create and connect github pages for deployment 
@@ -104,7 +107,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "2 dead links replaced"  
+git commit -m "added promo for 5 second when minimizing thw player"  
 git push
 
 </details>

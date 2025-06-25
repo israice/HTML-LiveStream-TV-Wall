@@ -3,16 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>LiveStream Wall</title>
-  <!-- hls.js handles HLS playback in browsers that lack native support -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
-    /* Global reset for margin / padding and to make sure flex items calculate correctly */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    /* Fill the viewport and hide scrollbars */
     html, body { width: 100%; height: 100%; overflow: hidden; }
 
-    /* Flex-grid that will hold all video tiles */
     .container {
       display: flex;
       flex-wrap: wrap;
@@ -20,77 +15,100 @@
       height: 100%;
     }
 
-    /* Base styles for every video tile */
+    .video-wrapper {
+      position: relative;
+    }
+
     .hls-video {
-      object-fit: cover;       /* Crop video to fill tile */
+      object-fit: cover;
       border: none;
-      cursor: pointer;         /* Indicate click-to-fullscreen */
+      cursor: pointer;
       pointer-events: auto;
+      display: block;
+    }
+
+    .overlay-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 75px;
+      height: 75px;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
     }
   </style>
 </head>
 <body>
-  <!-- Main video grid -->
   <div class="container" id="video-container"></div>
 
   <script>
-    const VIDEO_COUNT = 16;                                     // Number of video players to render
-    const container   = document.getElementById('video-container');
+    const VIDEO_COUNT = 16;
+    const container = document.getElementById('video-container');
+    const overlayImages = [];
+    const allVideos = [];
 
-    /**
-     * Attach hls.js to a <video> element, or fall back to native HLS support (Safari).
-     * @param {HTMLVideoElement} video  Target <video> element
-     * @param {string}           source URL of the .m3u8 stream
-     */
+    const showOverlaysFor5Seconds = () => {
+      overlayImages.forEach(img => img.style.display = 'block');
+      setTimeout(() => {
+        overlayImages.forEach(img => img.style.display = 'none');
+      }, 5000);
+    };
+
+    const muteAllVideos = () => {
+      allVideos.forEach(v => v.muted = true);
+    };
+
     const initializeVideo = (video, source) => {
       if (Hls.isSupported()) {
         const hls = new Hls();
         hls.loadSource(source);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});                        // Autoplay after manifest is ready
+          video.play().catch(() => {});
         });
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = source;                                    // Safari / iOS
+        video.src = source;
         video.addEventListener('loadedmetadata', () => {
           video.play().catch(() => {});
         });
       }
     };
 
-    /**
-     * Render a fixed grid of VIDEO_COUNT players and start each stream.
-     * Streams repeat cyclically if fewer than VIDEO_COUNT links are supplied.
-     * @param {string[]} links Array of .m3u8 URLs
-     */
     const renderVideos = (links) => {
       const sources = links.slice(0, VIDEO_COUNT);
       while (sources.length < VIDEO_COUNT) {
-        sources.push(...links.slice(0, VIDEO_COUNT - sources.length)); // Repeat to fill grid
+        sources.push(...links.slice(0, VIDEO_COUNT - sources.length));
       }
 
-      /* Simple square-root grid: ceil(√n) columns */
-      const columns      = Math.ceil(Math.sqrt(VIDEO_COUNT));
-      const rowHeight    = 100 / Math.ceil(VIDEO_COUNT / columns);
-      const columnWidth  = 100 / columns;
+      const columns = Math.ceil(Math.sqrt(VIDEO_COUNT));
+      const rowHeight = 100 / Math.ceil(VIDEO_COUNT / columns);
+      const columnWidth = 100 / columns;
 
-      sources.forEach(src => {
+      sources.forEach((src, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'video-wrapper';
+        wrapper.style.width = `${columnWidth}%`;
+        wrapper.style.height = `${rowHeight}%`;
+
         const video = document.createElement('video');
-        video.className   = 'hls-video';
-        video.controls    = true;
-        video.autoplay    = true;
-        video.muted       = true;                              // Start muted for autoplay policy
-        video.style.width  = `${columnWidth}%`;
-        video.style.height = `${rowHeight}%`;
+        video.className = 'hls-video';
+        video.controls = true;
+        video.autoplay = true;
+        video.muted = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        allVideos.push(video);
 
-        /**
-         * Custom click handler:
-         * ▶  Enter fullscreen + unmute
-         * ◀  Exit fullscreen + mute
-         * No pause / play toggling.
-         */
+        const image = document.createElement('img');
+        image.className = 'overlay-image';
+        image.src = 'image.webp';
+        image.alt = `Overlay ${index}`;
+        overlayImages.push(image);
+
         video.addEventListener('click', async (event) => {
-          event.preventDefault();   // Prevent default play/pause toggle
+          event.preventDefault();
           event.stopPropagation();
 
           try {
@@ -101,29 +119,74 @@
               document.msFullscreenElement === video;
 
             if (!isFullscreen) {
-              video.muted = false;                           // Turn sound on
-              if (video.requestFullscreen)           await video.requestFullscreen();
+              video.muted = false;
+              if (video.requestFullscreen) await video.requestFullscreen();
               else if (video.webkitRequestFullscreen) await video.webkitRequestFullscreen();
-              else if (video.mozRequestFullScreen)    await video.mozRequestFullScreen();
-              else if (video.msRequestFullscreen)     await video.msRequestFullscreen();
+              else if (video.mozRequestFullScreen) await video.mozRequestFullScreen();
+              else if (video.msRequestFullscreen) await video.msRequestFullscreen();
             } else {
-              video.muted = true;                            // Turn sound off
-              if (document.exitFullscreen)           await document.exitFullscreen();
-              else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
-              else if (document.mozCancelFullScreen)  await document.mozCancelFullScreen();
-              else if (document.msExitFullscreen)     await document.msExitFullscreen();
+              video.muted = true;
+
+              const exitFullscreen = () => {
+                if (document.exitFullscreen) return document.exitFullscreen();
+                else if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+                else if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
+                else if (document.msExitFullscreen) return document.msExitFullscreen();
+              };
+
+              await exitFullscreen();
+
+              const waitUntilExited = () => {
+                return new Promise(resolve => {
+                  const check = () => {
+                    const fs =
+                      document.fullscreenElement ||
+                      document.webkitFullscreenElement ||
+                      document.mozFullScreenElement ||
+                      document.msFullscreenElement;
+                    if (!fs) resolve();
+                    else setTimeout(check, 50);
+                  };
+                  check();
+                });
+              };
+
+              await waitUntilExited();
+
+              showOverlaysFor5Seconds();
             }
           } catch (e) {
             console.error('Fullscreen toggle failed', e);
           }
         });
 
-        container.appendChild(video);
+        wrapper.appendChild(video);
+        wrapper.appendChild(image);
+        container.appendChild(wrapper);
+
         initializeVideo(video, src);
       });
     };
 
-    /* Fetch list of stream URLs from connected.txt, then render the grid */
+    // Слушаем системный выход из фуллскрина
+    const handleFullscreenChange = () => {
+      const fsElement =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+
+      if (!fsElement) {
+        muteAllVideos();
+        showOverlaysFor5Seconds();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
     fetch('connected.txt')
       .then(r => r.text())
       .then(text => {
