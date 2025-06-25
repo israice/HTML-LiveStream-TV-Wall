@@ -2,8 +2,9 @@
 https://mcdn.br.de/br/fs/ard_alpha/hls/de/master.m3u8
 http://kontralive.siliconweb.com/live/kontratv/playlist.m3u8
 
-https://live.streaming.a2d.tv/asset/20025962.isml/.m3u8
-https://virta2.nopolanews.fi:8443/live/smil:Stream1.smil/playlist.m3u8
+http://video.oct.dc.gov/out/u/15_12.m3u8
+http://85.132.81.184:8080/arb/live/index.m3u8
+
 https://streaming.nartv.fi/live/ngrp:NAR_TV.stream_all/playlist.m3u8
 https://streamer.radiotaajuus.fi/memfs/47f113bf-04ea-493b-a9d4-52945fd9db31.m3u8
 https://rt-fra.rttv.com/dvr/rtfrance/playlist.m3u8

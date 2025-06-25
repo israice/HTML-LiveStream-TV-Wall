@@ -70,10 +70,11 @@ Fork → branch → commit feat/fix
 - added screenshot.png to README.md
 - v0.0.1 all tested and works
 
-### v0.0.1
+### v0.0.2
 
 - name of the repo updated in README.md
 - screenshot uploaded to free hosting
+- 2 dead links replaced
 
 ### FUTURE PLANS
 
@@ -103,7 +104,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "screenshot uploaded to free hosting"  
+git commit -m "2 dead links replaced"  
 git push
 
 </details>
@@ -112,6 +113,6 @@ git push
 
 ## 📄 License
 
-Licensed under the MIT License — see LICENSE for details.
+Licensed under the MIT License.
 
 <p align="center"><sub>Made with ❤️ &nbsp;for realtime news junkies.</sub></p>
