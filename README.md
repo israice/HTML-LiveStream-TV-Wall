@@ -83,12 +83,17 @@ Fork → branch → commit feat/fix
 - when zoom out the video start 5 sedonds from strach
 - when zoon out dont show image on the same video 
 - when zoom out change site to full screen mode
+- added csv as database
+- webp changed to gif files
+- added spesific url on click to each gif inside csv 
+
 
 ### FUTURE PLANS
 
 - create and connect github pages for deployment 
 - add scrolling to move all screen left and right
 - create script to get all m3u8 from the source at once
+
 
 ### SOURCE
 
@@ -112,7 +117,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "when zoom out change site to full screen mode"  
+git commit -m "added spesific url on click to each gif inside csv"  
 git push
 
 </details>
