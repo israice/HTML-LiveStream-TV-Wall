@@ -79,6 +79,11 @@ Fork → branch → commit feat/fix
 ### v0.0.3
 - added promo for 5 second when minimizing thw player
 
+### v0.0.4
+- when zoom out the video start 5 sedonds from strach
+- when zoon out dont show image on the same video 
+- when zoom out change site to full screen mode
+
 ### FUTURE PLANS
 
 - create and connect github pages for deployment 
@@ -107,7 +112,7 @@ git fetch origin; git checkout master; git reset --hard 1eaef8b; git clean -fdx
 ## Update repository
 
 git add .  
-git commit -m "added promo for 5 second when minimizing thw player"  
+git commit -m "when zoom out change site to full screen mode"  
 git push
 
 </details>

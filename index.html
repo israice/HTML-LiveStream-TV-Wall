@@ -1,42 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>LiveStream Wall</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; overflow: hidden; }
-
-    .container {
-      display: flex;
-      flex-wrap: wrap;
-      width: 100%;
-      height: 100%;
-    }
-
-    .video-wrapper {
-      position: relative;
-    }
-
+    .container { display: flex; flex-wrap: wrap; width: 100%; height: 100%; }
+    .video-wrapper { position: relative; }
     .hls-video {
-      object-fit: cover;
-      border: none;
-      cursor: pointer;
-      pointer-events: auto;
-      display: block;
+      object-fit: cover; border: none;
+      cursor: pointer; width: 100%; height: 100%; display: block;
     }
-
     .overlay-image {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 75px;
-      height: 75px;
+      position: absolute; top: 50%; left: 50%;
+      width: 75px; height: 75px;
       transform: translate(-50%, -50%);
-      z-index: 9999;
-      pointer-events: none;
-      display: none;
+      pointer-events: none; display: none; z-index: 9999;
     }
   </style>
 </head>
@@ -47,155 +28,135 @@
     const VIDEO_COUNT = 16;
     const container = document.getElementById('video-container');
     const overlayImages = [];
-    const allVideos = [];
+    let lastWrapperFs = null;
+    let overlayTimeout = null;
 
-    const showOverlaysFor5Seconds = () => {
-      overlayImages.forEach(img => img.style.display = 'block');
-      setTimeout(() => {
-        overlayImages.forEach(img => img.style.display = 'none');
-      }, 5000);
-    };
+    // Request fullscreen for the entire site
+    function enterSiteFullscreen() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    }
 
-    const muteAllVideos = () => {
-      allVideos.forEach(v => v.muted = true);
-    };
-
-    const initializeVideo = (video, source) => {
+    // Initialize HLS playback on a video element
+    function initializeVideo(video, src) {
       if (Hls.isSupported()) {
         const hls = new Hls();
-        hls.loadSource(source);
+        hls.loadSource(src);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = source;
-        video.addEventListener('loadedmetadata', () => {
-          video.play().catch(() => {});
-        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
+      } else {
+        video.src = src;
+        video.addEventListener('loadedmetadata', () => video.play().catch(() => {}));
       }
-    };
+    }
 
-    const renderVideos = (links) => {
+    // Render a grid of videos
+    function renderVideos(links) {
       const sources = links.slice(0, VIDEO_COUNT);
       while (sources.length < VIDEO_COUNT) {
         sources.push(...links.slice(0, VIDEO_COUNT - sources.length));
       }
+      const cols = Math.ceil(Math.sqrt(VIDEO_COUNT));
+      const rowH = 100 / Math.ceil(VIDEO_COUNT / cols);
+      const colW = 100 / cols;
 
-      const columns = Math.ceil(Math.sqrt(VIDEO_COUNT));
-      const rowHeight = 100 / Math.ceil(VIDEO_COUNT / columns);
-      const columnWidth = 100 / columns;
-
-      sources.forEach((src, index) => {
+      sources.forEach((src, idx) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'video-wrapper';
-        wrapper.style.width = `${columnWidth}%`;
-        wrapper.style.height = `${rowHeight}%`;
+        wrapper.style.width = `${colW}%`;
+        wrapper.style.height = `${rowH}%`;
 
         const video = document.createElement('video');
         video.className = 'hls-video';
         video.controls = true;
         video.autoplay = true;
         video.muted = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        allVideos.push(video);
 
-        const image = document.createElement('img');
-        image.className = 'overlay-image';
-        image.src = 'image.webp';
-        image.alt = `Overlay ${index}`;
-        overlayImages.push(image);
-
-        video.addEventListener('click', async (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-
-          try {
-            const isFullscreen =
-              document.fullscreenElement === video ||
-              document.webkitFullscreenElement === video ||
-              document.mozFullScreenElement === video ||
-              document.msFullscreenElement === video;
-
-            if (!isFullscreen) {
-              video.muted = false;
-              if (video.requestFullscreen) await video.requestFullscreen();
-              else if (video.webkitRequestFullscreen) await video.webkitRequestFullscreen();
-              else if (video.mozRequestFullScreen) await video.mozRequestFullScreen();
-              else if (video.msRequestFullscreen) await video.msRequestFullscreen();
-            } else {
-              video.muted = true;
-
-              const exitFullscreen = () => {
-                if (document.exitFullscreen) return document.exitFullscreen();
-                else if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
-                else if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
-                else if (document.msExitFullscreen) return document.msExitFullscreen();
-              };
-
-              await exitFullscreen();
-
-              const waitUntilExited = () => {
-                return new Promise(resolve => {
-                  const check = () => {
-                    const fs =
-                      document.fullscreenElement ||
-                      document.webkitFullscreenElement ||
-                      document.mozFullScreenElement ||
-                      document.msFullscreenElement;
-                    if (!fs) resolve();
-                    else setTimeout(check, 50);
-                  };
-                  check();
-                });
-              };
-
-              await waitUntilExited();
-
-              showOverlaysFor5Seconds();
-            }
-          } catch (e) {
-            console.error('Fullscreen toggle failed', e);
-          }
-        });
+        const overlay = document.createElement('img');
+        overlay.className = 'overlay-image';
+        overlay.src = 'image.webp';
+        overlay.alt = `Overlay ${idx}`;
+        overlayImages.push(overlay);
 
         wrapper.appendChild(video);
-        wrapper.appendChild(image);
+        wrapper.appendChild(overlay);
         container.appendChild(wrapper);
 
         initializeVideo(video, src);
+
+        // Click toggles only video fullscreen
+        wrapper.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const fsEl = document.fullscreenElement ||
+                       document.webkitFullscreenElement ||
+                       document.mozFullScreenElement ||
+                       document.msFullscreenElement;
+          const isWrapperFs = (fsEl === wrapper);
+
+          if (!isWrapperFs) {
+            // ENLARGE VIDEO: request fullscreen on wrapper only
+            overlayImages.forEach(img => img.style.display = 'none'); // hide overlays immediately
+            lastWrapperFs = wrapper;
+            if (wrapper.requestFullscreen) wrapper.requestFullscreen();
+            else if (wrapper.webkitRequestFullscreen) wrapper.webkitRequestFullscreen();
+            else if (wrapper.mozRequestFullScreen) wrapper.mozRequestFullScreen();
+            else if (wrapper.msRequestFullscreen) wrapper.msRequestFullscreen();
+            video.muted = false; // unmute
+          } else {
+            // MINIMIZE VIDEO: exit fullscreen
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+          }
+        });
       });
-    };
+    }
 
-    // Слушаем системный выход из фуллскрина
-    const handleFullscreenChange = () => {
-      const fsElement =
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement;
+    // Listen for exit from video-fullscreen
+    document.addEventListener('fullscreenchange', () => {
+      const fsEl = document.fullscreenElement ||
+                   document.webkitFullscreenElement ||
+                   document.mozFullScreenElement ||
+                   document.msFullscreenElement;
 
-      if (!fsElement) {
-        muteAllVideos();
-        showOverlaysFor5Seconds();
+      if (lastWrapperFs && fsEl !== lastWrapperFs) {
+        const video = lastWrapperFs.querySelector('video');
+        // 1) Enter site fullscreen
+        enterSiteFullscreen();
+        // 2) Mute the just-exited video
+        if (video) video.muted = true;
+        // 3) Clear existing overlay timeout
+        if (overlayTimeout) clearTimeout(overlayTimeout);
+        // 4) Show overlay on all other videos for 5 seconds
+        const wrapperOverlay = lastWrapperFs.querySelector('.overlay-image');
+        overlayImages.forEach(img => {
+          if (img !== wrapperOverlay) img.style.display = 'block';
+        });
+        overlayTimeout = setTimeout(() => {
+          overlayImages.forEach(img => img.style.display = 'none');
+        }, 5000);
+
+        lastWrapperFs = null;
       }
-    };
+    });
+    document.addEventListener('webkitfullscreenchange', () => document.dispatchEvent(new Event('fullscreenchange')));
+    document.addEventListener('mozfullscreenchange',    () => document.dispatchEvent(new Event('fullscreenchange')));
+    document.addEventListener('MSFullscreenChange',     () => document.dispatchEvent(new Event('fullscreenchange')));
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
-
+    // Load stream URLs and initialize
     fetch('connected.txt')
       .then(r => r.text())
-      .then(text => {
-        const links = text.split('\n').map(l => l.trim()).filter(Boolean);
+      .then(txt => {
+        const links = txt.split('\n').map(l => l.trim()).filter(Boolean);
         renderVideos(links);
       })
-      .catch(err => {
-        alert('Failed to load connected.txt: ' + err.message);
-      });
+      .catch(err => alert('Failed to load connected.txt: ' + err.message));
   </script>
 </body>
 </html>
