@@ -26,7 +26,7 @@
 ## 🚀 Live Demo
 
 > **Try it instantly:**  
-> https://israice.github.io/LiveStream-Wall/
+> https://israice.github.io/HTML-LiveStream-TV-Wall/
 
 <br/>
 
